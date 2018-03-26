@@ -10,9 +10,9 @@ public class Zombie {
 
     LatLng location;
     int ID;
-    int speed;
+    float speed;
 
-    public Zombie( LatLng newloc, int newID, int newspeed){
+    public Zombie( LatLng newloc, int newID, float newspeed){
         this.location=newloc;
         this.ID=newID;
         this.speed=newspeed;
@@ -32,11 +32,11 @@ public class Zombie {
         return this.ID;
     }
 
-    public void setSpeed(int newSpeed){
+    public void setSpeed(float newSpeed){
         this.speed=newSpeed;
     }
 
-    public int getSpeed(){
+    public float getSpeed(){
         return this.speed;
     }
 }
