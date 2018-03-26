@@ -371,7 +371,8 @@ public class ZombieMapActivity extends AppCompatActivity implements
     }
         
                 
-                //TODO Renu please check if this method makes sense
+                //TODO Renu please check if this method makes sense. THis is called to follow player 33%,
+                //if player not moving call catchplayer instead
                 
       private void followPlayer(LatLng userloc, Marker zombiemarker, float speed){
      double userlat= userloc.latitude;
@@ -395,6 +396,18 @@ public class ZombieMapActivity extends AppCompatActivity implements
      animateMarkerToGB(zombiemarker,finalzombiepos,zombieloc,interpolator,speed);
 
  }
+                
+                
+ private void catchPlayer(LatLng userloc, Marker zombiemarker, float speed){
+            double userlat= userloc.latitude;
+            double userlng=userloc.longitude;
+            LatLng zombieloc=zombiemarker.getPosition();
+           
+ LatLngInterpolators interpolator = new LatLngInterpolators();
+
+            animateMarkerToGB(zombiemarker,userloc,zombieloc,interpolator,speed);
+
+        }
 
     // animate  marker based  on any interpolator , (Linear , LinearFixed, or spherical
     // TODO , once map is ready ,  need to test this @Adrian to take care of map set up 
