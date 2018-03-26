@@ -60,6 +60,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     private String mPlayerName = "";
     private Integer mScore = 0;
     private TextView mCountDownText;
+    ArrayList<Marker>allMarkers;
 
     //Map Var
     GoogleMap googleMap;
@@ -89,9 +90,10 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
         setContentView(R.layout.activity_map);
         
-
+                
         checkLocationPermission();
         mCountDownText = findViewById(R.id.start_timer);
+        allMarkers = new ArrayList<Marker>();
         mCountDownText.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -233,7 +235,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     }
           
           
-            private void startCountDownTimer() {
+        private void startCountDownTimer() {
         new CountDownTimer(5000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
@@ -263,6 +265,20 @@ public class ZombieMapActivity extends AppCompatActivity implements
             return true;
         }
 
+    }
+         
+                //DrawZombieMarker
+        private void drawZombieMarker(LatLng point,int ID){
+        Marker temp;
+        MarkerOptions markerOptions = new MarkerOptions();
+        markerOptions.position(point);
+        markerOptions.icon(BitmapDescriptorFactory
+                    .defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
+        
+        temp = googleMap.addMarker(markerOptions);
+        temp.setTag(ID);
+        allMarkers.add(temp);
+        
     }
 
 
@@ -357,12 +373,13 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
     // animate  marker based  on any interpolator , (Linear , LinearFixed, or spherical
     // TODO , once map is ready ,  need to test this @Adrian to take care of map set up 
-    private void animateMarkerToGB(final Marker marker, final LatLng finalPosition, final LatLngInterpolators latLngInterpolator) {
+                //2603 CHANGED TO TAKE A SPEED VALUE.
+    private void animateMarkerToGB(final Marker marker, final LatLng finalPosition, final LatLngInterpolators latLngInterpolator, float speed) {
         final LatLng startPosition = marker.getPosition();
         final Handler handler = new Handler();
         final long start = SystemClock.uptimeMillis();
         final Interpolator interpolator = new AccelerateDecelerateInterpolator();
-        final float durationInMs = 3000;
+        final float durationInMs = speed;
 
         handler.post(new Runnable() {
             long elapsed;
