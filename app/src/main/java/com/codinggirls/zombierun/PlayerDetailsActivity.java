@@ -19,6 +19,7 @@ public class PlayerDetailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_player_details);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle(getString(R.string.player_details_header));
+
         findViewById(R.id.play_btn).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -29,6 +30,7 @@ public class PlayerDetailsActivity extends AppCompatActivity {
             }
         });
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
