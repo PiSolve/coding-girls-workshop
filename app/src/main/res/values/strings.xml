@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Zombie-Run</string>
+    <string name="player_details_header">Player Details</string>
 </resources>
