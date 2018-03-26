@@ -369,7 +369,32 @@ public class ZombieMapActivity extends AppCompatActivity implements
         sendIntent.setType("text/plain");
         startActivity(sendIntent);
     }
+        
+                
+                //TODO Renu please check if this method makes sense
+                
+      private void followPlayer(LatLng userloc, Marker zombiemarker, float speed){
+     double userlat= userloc.latitude;
+     double userlng=userloc.longitude;
+     LatLng zombieloc=zombiemarker.getPosition();
+     double zombielat= zombiemarker.getPosition().latitude;
+     double zombielng= zombiemarker.getPosition().longitude;
+              LatLngInterpolators interpolator = new LatLngInterpolators();
 
+     double distancelat= userlat-zombielat;
+     double distancelng=userlng-zombielng;
+
+     double gainlat =distancelat/3;
+     double gainlng= distancelng/3;
+
+     double newzombielat= zombielat+gainlat;
+     double newzombielng= zombielng+gainlng;
+
+     LatLng finalzombiepos= new LatLng(newzombielat,newzombielng);
+     
+     animateMarkerToGB(zombiemarker,finalzombiepos,zombieloc,interpolator,speed);
+
+ }
 
     // animate  marker based  on any interpolator , (Linear , LinearFixed, or spherical
     // TODO , once map is ready ,  need to test this @Adrian to take care of map set up 
