@@ -22,6 +22,7 @@ public class PlayerDetailsActivity extends AppCompatActivity {
                 String name = ((EditText) findViewById(R.id.player_name)).getText().toString();
                 // start map activity
                 ZombieMapActivity.startActivity(name, PlayerDetailsActivity.this);
+                finish();
             }
         });
     }
