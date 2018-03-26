@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Zombie-Run</string>
+
+     <string name="google_maps_key">AIzaSyCFfhEtZI4tr_JF968YRCRLaU3Oqj1Bobk</string>
     <string name="player_details_header">Player Details</string>
+
 </resources>
