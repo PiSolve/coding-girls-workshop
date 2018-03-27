@@ -43,6 +43,10 @@ import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import android.support.v4.app.Fragment;
 import android.widget.Toast;
+import android.widget.Button;
+import android.widget.Chronometer;
+import java.util.ArrayList;
+
 
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
@@ -74,6 +78,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     Location userloc;
     boolean firstZoom= false;
     Chronometer cmeter;
+    Button activate;
     int zombieID;
 
     //Renus old code
@@ -92,7 +97,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
         setContentView(R.layout.activity_map);
         cmeter = (Chronometer)findViewById(R.id.chronometer);
-                
+        activate= (Button)findViewById(R.id.buttonactivate);    
         checkLocationPermission();
         mCountDownText = findViewById(R.id.start_timer);
         allMarkers = new ArrayList<Marker>();
@@ -100,6 +105,15 @@ public class ZombieMapActivity extends AppCompatActivity implements
             @Override
             public void onClick(View v) {
                 startCountDownTimer();
+            }
+        });
+            
+        buttonactivate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                 for(int i = 0;i<allMarkers.size();i++){
+                followPlayer(loc,allMarkers.get(i),3000);
+        }
             }
         });
 
