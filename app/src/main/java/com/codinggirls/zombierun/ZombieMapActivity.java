@@ -74,6 +74,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     Location userloc;
     boolean firstZoom= false;
     Chronometer cmeter;
+    int zombieID;
 
     //Renus old code
     public static void startActivity(String name, Context context) {
@@ -228,10 +229,21 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
         //TODO heres where we can control the amount of zoom necessary to maintain the illusion of spawn and chase
         googleMap.animateCamera(CameraUpdateFactory.zoomTo(17));
+        //2703 spawning zombie onclick
+         googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng zombielatlng) {
+               spawnzombie(zombielatlng);
+            }
+        });
 
 
 
-
+    }
+                
+   public void spawnzombie(LatLng zombielatlng){
+        drawZombieMarker(zombielatlng, zombieID);
+        zombieID +=1;
     }
 
     public boolean isGooglePlayServicesAvailable(Activity activity){
@@ -397,7 +409,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
      LatLng zombieloc=zombiemarker.getPosition();
      double zombielat= zombiemarker.getPosition().latitude;
      double zombielng= zombiemarker.getPosition().longitude;
-              LatLngInterpolators interpolator = new LatLngInterpolators();
+      LatLngInterpolators interpolator = new LatLngInterpolators();
 
      double distancelat= userlat-zombielat;
      double distancelng=userlng-zombielng;
