@@ -23,6 +23,14 @@
         android:layout_alignParentTop="true"
         android:layout_marginEnd="50dp"
         android:layout_marginTop="30dp" />
+    <Button
+        android:id="@+id/buttonactivate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="13dp"
+        android:text="Button" />
 
    
 
