@@ -58,7 +58,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
         GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener{
     private static final String PLAYER_NAME = "playerName";
     private String mPlayerName = "";
-    private Integer mScore = 0;
+    private long mScore = 0;
     private TextView mCountDownText;
     ArrayList<Marker>allMarkers;
 
@@ -73,6 +73,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     double userlat, userlon;
     Location userloc;
     boolean firstZoom= false;
+    Chronometer cmeter;
 
     //Renus old code
     public static void startActivity(String name, Context context) {
@@ -89,7 +90,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
         getDataFromBundle();
 
         setContentView(R.layout.activity_map);
-        
+        cmeter = (Chronometer)findViewById(R.id.chronometer);
                 
         checkLocationPermission();
         mCountDownText = findViewById(R.id.start_timer);
@@ -103,6 +104,20 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
 
     }
+                
+    //2703 code for the chronometer
+    public void startclock(){
+        cmeter.start();
+    }
+
+    public void stopclock(){
+        cmeter.stop();
+    }
+
+    public void fetchclock(){
+        cmeter.getBase();
+    }
+
 
 
     //Required code for LocationListener, onConnected to Google Play Services, we will find
@@ -250,6 +265,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
             @Override
             public void onFinish() {
                 mCountDownText.setVisibility(View.GONE);
+                startclock();
             }
         }.start();
 
@@ -357,6 +373,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
             finish();
         }
         if (item.getItemId() == R.id.share_score) {
+            mScore= fetchclock();
             shareScore();
         }
         return super.onOptionsItemSelected(item);
@@ -365,7 +382,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     private void shareScore() {
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
-        sendIntent.putExtra(Intent.EXTRA_TEXT, "Hey checkout my score on Zombie run :  " + mPlayerName + " :" + mScore);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, "Hey checkout my score on Zombie run :  " + mPlayerName + " :" + mScore + " seconds");
         sendIntent.setType("text/plain");
         startActivity(sendIntent);
     }
