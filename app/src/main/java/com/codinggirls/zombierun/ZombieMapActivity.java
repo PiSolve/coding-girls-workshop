@@ -61,7 +61,9 @@ public class ZombieMapActivity extends AppCompatActivity implements
     double lat, lon;
     double userlat, userlon;
     Location userloc;
+    Location lastuserlocation;
     boolean firstZoom = false;
+    boolean activated = false;
     Chronometer cmeter;
     Button activate;
     int zombieID;
@@ -83,6 +85,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
         getDataFromBundle();
         cmeter = (Chronometer) findViewById(R.id.chronometer);
         activate = (Button) findViewById(R.id.buttonactivate);
+        activate.setText("Start!");
         checkLocationPermission();
         mCountDownText = findViewById(R.id.start_timer);
         allMarkers = new ArrayList<Marker>();
@@ -96,11 +99,9 @@ public class ZombieMapActivity extends AppCompatActivity implements
         activate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-                for (int i = 0; i < allMarkers.size(); i++) {
-                    // todo , what are we trying to pass here @adrian ,user's current location , if not please change it accordingly
-                    followPlayer(latLng, allMarkers.get(i), 3000);
-                }
+                    //2803 changed to a boolean.
+                      activated = true;
+               
             }
         });
 
@@ -172,6 +173,23 @@ public class ZombieMapActivity extends AppCompatActivity implements
         if (firstZoom == false) {
             googleMap.animateCamera(CameraUpdateFactory.zoomTo(17));
             firstZoom = true;
+        }
+            
+      
+        //2803 added check and followplayer method call to try and track human player
+        if(activated ==true&& allMarkers.size() !=0){
+
+
+            for (int i = 0; i < allMarkers.size(); i++) {
+                if(lastuserlocation != mLastLocation){
+                    followPlayer(loc,allMarkers.get(i),3000);
+                    lastuserlocation= mLastLocation;
+                }else{
+                    catchPlayer(loc,allMarkers.get(i),3000);
+                }
+
+            }
+
         }
 
 
@@ -433,6 +451,12 @@ public class ZombieMapActivity extends AppCompatActivity implements
         LatLngInterpolators interpolator = new LatLngInterpolators.LinearFixed();
 
         animateMarkerToGB(zombiemarker, userloc, interpolator, speed);
+            
+            //todo add some dialoghere
+            
+        cmeter.stop();
+        mScore=fetchclock();
+        shareScore();
 
     }
 
