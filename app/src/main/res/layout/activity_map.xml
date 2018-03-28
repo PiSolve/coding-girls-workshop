@@ -1,32 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="com.codinggirls.zombierun">
-
-
-        <android.support.v7.widget.Toolbar
+<android.support.design.widget.CoordinatorLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            android:elevation="1dp">
+    </android.support.v7.widget.Toolbar>
+    <FrameLayout android:layout_width="match_parent"
+                 android:layout_height="match_parent">
+        <include layout="@layout/content_map"/>
 
-
-           android:elevation = "1dp"
-            app:popupTheme="@style/AppTheme.PopupOverlay"
-
-
-
-            >
-
-
-        </android.support.v7.widget.Toolbar>
-
-
-
-
-    <include layout="@layout/content_map" />
-
+        <TextView android:layout_width="wrap_content"
+                  android:background="@drawable/timer_background"
+                  android:text="START"
+                  android:layout_centerInParent="true"
+                  android:gravity="center"
+                  android:layout_gravity="center"
+                  android:textColor="@color/colorPrimary"
+                  android:id="@+id/start_timer"
+                  android:textSize="25sp"
+                  android:layout_height="wrap_content"/>
+    </FrameLayout>
 
 </android.support.design.widget.CoordinatorLayout>

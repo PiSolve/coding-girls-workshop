@@ -1,14 +1,24 @@
 package com.codinggirls.zombierun;
 
 
-import android.Manifest;
-import android.app.Activity;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -25,46 +35,21 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
-import android.widget.TextView;
-
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.maps.OnMapReadyCallback;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.LocationSource;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import android.support.v4.app.Fragment;
-import android.widget.Toast;
 import android.widget.Button;
 import android.widget.Chronometer;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import java.util.ArrayList;
-
-
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.CircleOptions;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MapStyleOptions;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 public class ZombieMapActivity extends AppCompatActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener{
+        GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
     private static final String PLAYER_NAME = "playerName";
     private String mPlayerName = "";
     private long mScore = 0;
     private TextView mCountDownText;
-    ArrayList<Marker>allMarkers;
+    ArrayList<Marker> allMarkers;
 
     //Map Var
     GoogleMap googleMap;
@@ -76,10 +61,12 @@ public class ZombieMapActivity extends AppCompatActivity implements
     double lat, lon;
     double userlat, userlon;
     Location userloc;
-    boolean firstZoom= false;
+    boolean firstZoom = false;
     Chronometer cmeter;
     Button activate;
     int zombieID;
+    //Check if user allowed permission already
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     //Renus old code
     public static void startActivity(String name, Context context) {
@@ -91,13 +78,11 @@ public class ZombieMapActivity extends AppCompatActivity implements
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_zombie_run_layout);
+        setContentView(R.layout.activity_map);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getDataFromBundle();
-
-        setContentView(R.layout.activity_map);
-        cmeter = (Chronometer)findViewById(R.id.chronometer);
-        activate= (Button)findViewById(R.id.buttonactivate);    
+        cmeter = (Chronometer) findViewById(R.id.chronometer);
+        activate = (Button) findViewById(R.id.buttonactivate);
         checkLocationPermission();
         mCountDownText = findViewById(R.id.start_timer);
         allMarkers = new ArrayList<Marker>();
@@ -107,32 +92,33 @@ public class ZombieMapActivity extends AppCompatActivity implements
                 startCountDownTimer();
             }
         });
-            
-        buttonactivate.setOnClickListener(new View.OnClickListener() {
+
+        activate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                 for(int i = 0;i<allMarkers.size();i++){
-                followPlayer(loc,allMarkers.get(i),3000);
-        }
+                LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+                for (int i = 0; i < allMarkers.size(); i++) {
+                    // todo , what are we trying to pass here @adrian ,user's current location , if not please change it accordingly
+                    followPlayer(latLng, allMarkers.get(i), 3000);
+                }
             }
         });
 
 
     }
-                
+
     //2703 code for the chronometer
-    public void startclock(){
+    public void startclock() {
         cmeter.start();
     }
 
-    public void stopclock(){
+    public void stopclock() {
         cmeter.stop();
     }
 
-    public void fetchclock(){
-        cmeter.getBase();
+    public long fetchclock() {
+        return cmeter.getBase();
     }
-
 
 
     //Required code for LocationListener, onConnected to Google Play Services, we will find
@@ -142,13 +128,13 @@ public class ZombieMapActivity extends AppCompatActivity implements
         mLocationRequest = LocationRequest.create();
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         mLocationRequest.setInterval(100);
-        if (mGoogleApiClient == null || !mGoogleApiClient.isConnected()){
+        if (mGoogleApiClient == null || !mGoogleApiClient.isConnected()) {
 
             buildGoogleApiClient();
             mGoogleApiClient.connect();
 
         }
-        if (mGoogleApiClient.isConnected()){
+        if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         }
 
@@ -161,51 +147,55 @@ public class ZombieMapActivity extends AppCompatActivity implements
             lon = mLastLocation.getLongitude();
             LatLng loc = new LatLng(lat, lon);
             googleMap.moveCamera(CameraUpdateFactory.newLatLng(loc));
-                /*
+            /*
 
-                */
+             */
         }
 
     }
+
     @Override
-    public void onConnectionSuspended(int i){
+    public void onConnectionSuspended(int i) {
 
     }
 
     @Override
-    public void onLocationChanged(Location location){
+    public void onLocationChanged(Location location) {
         //Heres the code to track user location. One can add markers or do whatever when the user momves.
-        mLastLocation=location;
-        lat  = mLastLocation.getLatitude();
+        mLastLocation = location;
+        lat = mLastLocation.getLatitude();
         lon = mLastLocation.getLongitude();
-        LatLng loc = new LatLng(lat,lon);
+        LatLng loc = new LatLng(lat, lon);
 
 
         //initial zoom
-        if(firstZoom ==false){
+        if (firstZoom == false) {
             googleMap.animateCamera(CameraUpdateFactory.zoomTo(17));
-            firstZoom=true;
+            firstZoom = true;
         }
 
 
     }
 
-    public void onConnectionFailed(ConnectionResult connectionResult){
+    public void onConnectionFailed(ConnectionResult connectionResult) {
         buildGoogleApiClient();
     }
 
-    synchronized void buildGoogleApiClient(){
+    synchronized void buildGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
-    };
+    }
+
+    ;
+
     //Connect and disconnect to ApiClient during start/destroy
     @Override
     protected void onStart() {
         super.onStart();
-        if (mGoogleApiClient == null || !mGoogleApiClient.isConnected()){
+        if (mGoogleApiClient == null || !mGoogleApiClient.isConnected()) {
 
             buildGoogleApiClient();
             mGoogleApiClient.connect();
@@ -213,11 +203,10 @@ public class ZombieMapActivity extends AppCompatActivity implements
         }
 
 
-
     }
 
     @Override
-    protected void onDestroy(){
+    protected void onDestroy() {
         super.onDestroy();
         mGoogleApiClient.disconnect();
     }
@@ -225,7 +214,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     //Code required for getMapAsync, part of onMapReadyCallback
     //GetMapAsync needs hence this callback method, where you can immediately set stuff
     @Override
-    public void onMapReady(GoogleMap map ) {
+    public void onMapReady(GoogleMap map) {
 
 
         this.googleMap = map;
@@ -244,27 +233,26 @@ public class ZombieMapActivity extends AppCompatActivity implements
         //TODO heres where we can control the amount of zoom necessary to maintain the illusion of spawn and chase
         googleMap.animateCamera(CameraUpdateFactory.zoomTo(17));
         //2703 spawning zombie onclick
-         googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+        googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng zombielatlng) {
-               spawnzombie(zombielatlng);
+                spawnzombie(zombielatlng);
             }
         });
 
 
-
     }
-                
-   public void spawnzombie(LatLng zombielatlng){
+
+    public void spawnzombie(LatLng zombielatlng) {
         drawZombieMarker(zombielatlng, zombieID);
-        zombieID +=1;
+        zombieID += 1;
     }
 
-    public boolean isGooglePlayServicesAvailable(Activity activity){
+    public boolean isGooglePlayServicesAvailable(Activity activity) {
         GoogleApiAvailability api = GoogleApiAvailability.getInstance();
-        int status= api.isGooglePlayServicesAvailable(this);
+        int status = api.isGooglePlayServicesAvailable(this);
         //if we have a problem, return false
-        if(status != ConnectionResult.SUCCESS) {
+        if (status != ConnectionResult.SUCCESS) {
             if (api.isUserResolvableError(status)) {
                 api.getErrorDialog(activity, status, 2404).show();
             }
@@ -274,9 +262,9 @@ public class ZombieMapActivity extends AppCompatActivity implements
         return true;
 
     }
-          
-          
-        private void startCountDownTimer() {
+
+
+    private void startCountDownTimer() {
         new CountDownTimer(5000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
@@ -294,54 +282,53 @@ public class ZombieMapActivity extends AppCompatActivity implements
                 startclock();
             }
         }.start();
+    }
 
-    //Check if user allowed permission already
-    public static final int MY_PERMISSIONS_REQUEST_LOCATION=99;
-    public boolean checkLocationPermission(){
-        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED)
-        {
+
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             //No permission allowed, force user to give one
             ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.CAMERA, Manifest.permission.WRITE_SETTINGS, Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_LOCATION);
             return false;
-        }else {
+        } else {
             return true;
         }
 
     }
-         
-                //DrawZombieMarker
-        private void drawZombieMarker(LatLng point,int ID){
+
+    //DrawZombieMarker
+    private void drawZombieMarker(LatLng point, int ID) {
         Marker temp;
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(point);
         markerOptions.icon(BitmapDescriptorFactory
-                    .defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
-        
+                .defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
+
         temp = googleMap.addMarker(markerOptions);
         temp.setTag(ID);
         allMarkers.add(temp);
-        
+
     }
 
 
     //callback from RequestPermissions() method
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int []grantResults){
-        switch (requestCode){
-            case MY_PERMISSIONS_REQUEST_LOCATION:{
+    public void onRequestPermissionsResult(int requestCode, String permissions[],
+                                           int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_LOCATION: {
                 //if request is cancelled result arrays are empty
-                if(grantResults.length>0 && grantResults[0] ==PackageManager.PERMISSION_GRANTED){
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     //permission granted, so do everything related to locations
-                    if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)== PackageManager.PERMISSION_GRANTED)
-                    {
-                        if (mGoogleApiClient == null){
+                    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                        if (mGoogleApiClient == null) {
                             buildGoogleApiClient();
                         }
                         googleMap.setMyLocationEnabled(true);
                     }
-                }else{
+                } else {
                     //permission denied
-                    Toast.makeText(this,"permission denied, app functionality disabled", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "permission denied, app functionality disabled", Toast.LENGTH_LONG).show();
                 }
                 return;
             }
@@ -349,13 +336,12 @@ public class ZombieMapActivity extends AppCompatActivity implements
     }
 
 
-
     @Override
-    public void onResume(){
+    public void onResume() {
         super.onResume();
         //Required CONNECT CALL TO ACTUALLY START FUSED LOCATION API
 
-        if (mGoogleApiClient == null || !mGoogleApiClient.isConnected()){
+        if (mGoogleApiClient == null || !mGoogleApiClient.isConnected()) {
 
             buildGoogleApiClient();
             mGoogleApiClient.connect();
@@ -363,24 +349,22 @@ public class ZombieMapActivity extends AppCompatActivity implements
         }
 
         if (googleMap == null) {
-            SupportMapFragment fm = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
+            SupportMapFragment fm = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
 
             fm.getMapAsync(this);
         }
 
 
-
     }
 
     @Override
-    public void onPause(){
+    public void onPause() {
         super.onPause();
-        if (mGoogleApiClient != null) {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
         }
 
     }
-
 
 
     private void getDataFromBundle() {
@@ -399,7 +383,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
             finish();
         }
         if (item.getItemId() == R.id.share_score) {
-            mScore= fetchclock();
+            mScore = fetchclock();
             shareScore();
         }
         return super.onOptionsItemSelected(item);
@@ -412,50 +396,51 @@ public class ZombieMapActivity extends AppCompatActivity implements
         sendIntent.setType("text/plain");
         startActivity(sendIntent);
     }
-        
-                
-                //TODO Renu please check if this method makes sense. THis is called to follow player 33%,
-                //if player not moving call catchplayer instead
-                
-      private void followPlayer(LatLng userloc, Marker zombiemarker, float speed){
-     double userlat= userloc.latitude;
-     double userlng=userloc.longitude;
-     LatLng zombieloc=zombiemarker.getPosition();
-     double zombielat= zombiemarker.getPosition().latitude;
-     double zombielng= zombiemarker.getPosition().longitude;
-      LatLngInterpolators interpolator = new LatLngInterpolators();
 
-     double distancelat= userlat-zombielat;
-     double distancelng=userlng-zombielng;
 
-     double gainlat =distancelat/3;
-     double gainlng= distancelng/3;
+    //TODO Renu please check if this method makes sense. THis is called to follow player 33%,
+    //if player not moving call catchplayer instead
 
-     double newzombielat= zombielat+gainlat;
-     double newzombielng= zombielng+gainlng;
+    private void followPlayer(LatLng userloc, Marker zombiemarker, float speed) {
+        double userlat = userloc.latitude;
+        double userlng = userloc.longitude;
+        LatLng zombieloc = zombiemarker.getPosition();
+        double zombielat = zombiemarker.getPosition().latitude;
+        double zombielng = zombiemarker.getPosition().longitude;
+        LatLngInterpolators interpolator = new LatLngInterpolators.LinearFixed();
 
-     LatLng finalzombiepos= new LatLng(newzombielat,newzombielng);
-     
-     animateMarkerToGB(zombiemarker,finalzombiepos,zombieloc,interpolator,speed);
+        double distancelat = userlat - zombielat;
+        double distancelng = userlng - zombielng;
 
- }
-                
-                
- private void catchPlayer(LatLng userloc, Marker zombiemarker, float speed){
-            double userlat= userloc.latitude;
-            double userlng=userloc.longitude;
-            LatLng zombieloc=zombiemarker.getPosition();
-           
- LatLngInterpolators interpolator = new LatLngInterpolators();
+        double gainlat = distancelat / 3;
+        double gainlng = distancelng / 3;
 
-            animateMarkerToGB(zombiemarker,userloc,zombieloc,interpolator,speed);
+        double newzombielat = zombielat + gainlat;
+        double newzombielng = zombielng + gainlng;
 
-        }
+        LatLng finalzombiepos = new LatLng(newzombielat, newzombielng);
+
+        animateMarkerToGB(zombiemarker, finalzombiepos, interpolator, speed);
+
+    }
+
+
+    private void catchPlayer(LatLng userloc, Marker zombiemarker, float speed) {
+        double userlat = userloc.latitude;
+        double userlng = userloc.longitude;
+        LatLng zombieloc = zombiemarker.getPosition();
+
+        LatLngInterpolators interpolator = new LatLngInterpolators.LinearFixed();
+
+        animateMarkerToGB(zombiemarker, userloc, interpolator, speed);
+
+    }
 
     // animate  marker based  on any interpolator , (Linear , LinearFixed, or spherical
-    // TODO , once map is ready ,  need to test this @Adrian to take care of map set up 
-                //2603 CHANGED TO TAKE A SPEED VALUE.
-    private void animateMarkerToGB(final Marker marker, final LatLng finalPosition, final LatLngInterpolators latLngInterpolator, float speed) {
+    // TODO , once map is ready ,  need to test this @Adrian to take care of map set up
+    //2603 CHANGED TO TAKE A SPEED VALUE.
+    private void animateMarkerToGB(final Marker marker, final LatLng finalPosition,
+                                   final LatLngInterpolators latLngInterpolator, float speed) {
         final LatLng startPosition = marker.getPosition();
         final Handler handler = new Handler();
         final long start = SystemClock.uptimeMillis();
