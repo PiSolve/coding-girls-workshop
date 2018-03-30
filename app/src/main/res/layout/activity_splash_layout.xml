@@ -9,6 +9,6 @@
               android:gravity="center"
               android:textSize="30sp"
               android:layout_height="wrap_content"
-              android:text="Welcome"/>
+              android:text="ZombieRun"/>
 
 </RelativeLayout>
