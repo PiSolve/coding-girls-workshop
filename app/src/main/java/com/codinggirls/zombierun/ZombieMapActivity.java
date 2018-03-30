@@ -41,6 +41,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ZombieMapActivity extends AppCompatActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
@@ -64,6 +66,8 @@ public class ZombieMapActivity extends AppCompatActivity implements
     Location lastuserlocation;
     boolean firstZoom = false;
     boolean activated = false;
+    boolean firstRun= true;
+    boolean caught = false;
     Chronometer cmeter;
     Button activate;
     int zombieID;
@@ -76,8 +80,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
         intent.putExtra(PLAYER_NAME, name);
         context.startActivity(intent);
     }
-        
-    //The primary method of the activity, automatically called by Android. We override it in order to get it to do what we want.           
+    //The primary method of the activity, automatically called by Android. We override it in order to get it to do what we want.
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,9 +103,9 @@ public class ZombieMapActivity extends AppCompatActivity implements
         activate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                    //2803 changed to a boolean.
-                      activated = true;
-               
+
+                activated= true;
+
             }
         });
 
@@ -123,9 +126,9 @@ public class ZombieMapActivity extends AppCompatActivity implements
     }
 
 
-    //Required code for LocationListener,  LocationRequests serve to tell Android that we wish to use 
-                // GPS and GoogleMaps in order to track our location. In order to effectively track this location in GoogleMaps,
-                //We need to connect to the Google Maps API.
+    //Required code for LocationListener,  LocationRequests serve to tell Android that we wish to use
+    // GPS and GoogleMaps in order to track our location. In order to effectively track this location in GoogleMaps,
+    //We need to connect to the Google Maps API.
     @Override
     public void onConnected(Bundle bundle) {
         checkLocationPermission();
@@ -162,37 +165,58 @@ public class ZombieMapActivity extends AppCompatActivity implements
     public void onConnectionSuspended(int i) {
 
     }
-    
- //In theory, this method is called every time the User's location changes. In practice, it is called every few seconds automatically
+    //In theory, this method is called every time the User's location changes. In practice, it is called every few seconds automatically
     @Override
     public void onLocationChanged(Location location) {
         //Heres the code to track user location. Extracting Coordinates from location. One can add markers or do whatever when the user momves.
+
         mLastLocation = location;
+
         lat = mLastLocation.getLatitude();
         lon = mLastLocation.getLongitude();
         LatLng loc = new LatLng(lat, lon);
 
 
-        //We check if we have already zoomed to the level desired
+        //initial zoom
         if (firstZoom == false) {
             googleMap.animateCamera(CameraUpdateFactory.zoomTo(17));
             firstZoom = true;
         }
-            
-      
         //If the user has pressed the start button, and we have zombie markers present, we begin the game
-        if(activated ==true&& allMarkers.size() !=0){
+        if(activated ==true&& allMarkers.size() !=0) {
 
 
-            for (int i = 0; i < allMarkers.size(); i++) {
-                if(lastuserlocation != mLastLocation){
-                    followPlayer(loc,allMarkers.get(i),3000);
-                    lastuserlocation= mLastLocation;
-                }else{
-                    catchPlayer(loc,allMarkers.get(i),3000);
+            // Follow player once first, in order to update lastuserlocation and avoid a null error
+            if(firstRun==true){
+                for (int i = 0; i < allMarkers.size(); i++) {
+
+                    followPlayer(loc, allMarkers.get(i), 3000);
+                    lastuserlocation = mLastLocation;
+                    firstRun=false;
                 }
+            }else{
+                //if user hasnt moved , then we catch, else we follow
+                boolean close = checkifclose(mLastLocation,lastuserlocation);
+                if (close==true && caught==false) {
+                    for (int i = 0; i < allMarkers.size(); i++) {
+                        catchPlayer(loc, allMarkers.get(i), 3000);
+                        Toast.makeText(getApplicationContext(), "Caught!", Toast.LENGTH_LONG).show();
+                    }
+                }
+                if (close!=true && caught ==false){
+                    for (int i = 0; i < allMarkers.size(); i++) {
 
+                        followPlayer(loc,allMarkers.get(i),3000);
+                        lastuserlocation= mLastLocation;
+
+
+                    }
+                }
             }
+
+
+
+
 
         }
 
@@ -213,7 +237,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
     ;
 
-    //Connect and disconnect to ApiClient during start/destroy of an activity
+    //Connect and disconnect to ApiClient during start/destroy
     @Override
     protected void onStart() {
         super.onStart();
@@ -233,8 +257,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
         mGoogleApiClient.disconnect();
     }
 
-    //This code gets alled by GoogleMaps as soon as the Map is Ready. We want to put all map-related code here
-
+    //This code gets called by GoogleMaps as soon as the Map is Ready. We want to put all map-related code here
     @Override
     public void onMapReady(GoogleMap map) {
 
@@ -254,7 +277,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
         //TODO heres where we can control the amount of zoom necessary to maintain the illusion of spawn and chase
         googleMap.animateCamera(CameraUpdateFactory.zoomTo(17));
-        //We set the map to listen out for clicks, track location of click, and spawn zobie on click
+        //2703 spawning zombie onclick
         googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng zombielatlng) {
@@ -264,12 +287,12 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
 
     }
-
+    //spwns a zombie Marker on map
     public void spawnzombie(LatLng zombielatlng) {
         drawZombieMarker(zombielatlng, zombieID);
         zombieID += 1;
     }
-        // A fallback check in case we do not have GoogleAPI for any reason (i.e. no internet)
+    // A fallback check in case we do not have GoogleAPI for any reason (i.e. no internet)
     public boolean isGooglePlayServicesAvailable(Activity activity) {
         GoogleApiAvailability api = GoogleApiAvailability.getInstance();
         int status = api.isGooglePlayServicesAvailable(this);
@@ -285,7 +308,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
     }
 
-        //Code to start out the game with an initial timer.
+
     private void startCountDownTimer() {
         new CountDownTimer(5000, 1000) {
             @Override
@@ -306,8 +329,8 @@ public class ZombieMapActivity extends AppCompatActivity implements
         }.start();
     }
 
-//Many Android methods, such as accessing the internet, or using GPS, require the permission of the user. We either request them in the manifest
-                //Or do it here.
+    //Many Android methods, such as accessing the internet, or using GPS, require the permission of the user. We either request them in the manifest
+    //Or do it here.
     public boolean checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             //No permission allowed, force user to give one
@@ -334,7 +357,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     }
 
 
-    //callback from RequestPermissions() method, we check what the user responded to our request for permissions
+    //callback from RequestPermissions() method, handling the user's response to our requests
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[],
                                            int[] grantResults) {
@@ -358,7 +381,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
         }
     }
 
-        //Called as soon as the user opens up the app after minimization
+
     @Override
     public void onResume() {
         super.onResume();
@@ -379,7 +402,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
 
     }
-
+    //called when you minimize app
     @Override
     public void onPause() {
         super.onPause();
@@ -415,7 +438,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     private void shareScore() {
         Intent sendIntent = new Intent();
         sendIntent.setAction(Intent.ACTION_SEND);
-        sendIntent.putExtra(Intent.EXTRA_TEXT, "Hey checkout my score on Zombie run :  " + mPlayerName + " :" + mScore + " seconds");
+        sendIntent.putExtra(Intent.EXTRA_TEXT, "Hey checkout my score on Zombie run :  " + mPlayerName + " : " + mScore + " seconds");
         sendIntent.setType("text/plain");
         startActivity(sendIntent);
     }
@@ -446,7 +469,8 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
     }
 
-
+    //when instructed to catch, zombies will move to the user, and then score will be shared.
+    //Customization options: check if distance between user and zombie is too large.
     private void catchPlayer(LatLng userloc, Marker zombiemarker, float speed) {
         double userlat = userloc.latitude;
         double userlng = userloc.longitude;
@@ -455,19 +479,34 @@ public class ZombieMapActivity extends AppCompatActivity implements
         LatLngInterpolators interpolator = new LatLngInterpolators.LinearFixed();
 
         animateMarkerToGB(zombiemarker, userloc, interpolator, speed);
-            
-            //todo add some dialoghere
-            
         cmeter.stop();
         mScore=fetchclock();
-        shareScore();
+      ; caught=true;
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                shareScore();
+                finish();
+            }
+        }, 3000);
+
 
     }
+    //method to measure up two locations to check if we are close enough
+    private boolean checkifclose(Location userloc, Location zombieloc){
+       float distance = userloc.distanceTo(zombieloc);
 
+       if (distance< 5){
+           return true;
+
+       }else{
+           return false;
+       }
+    }
+
+    
     // animate  marker based  on any interpolator , (Linear , LinearFixed, or spherical)
     //An interpolator is simply a class used to animate something.
-    // TODO , once map is ready ,  need to test this @Adrian to take care of map set up
-    //2603 CHANGED TO TAKE A SPEED VALUE.
     private void animateMarkerToGB(final Marker marker, final LatLng finalPosition,
                                    final LatLngInterpolators latLngInterpolator, float speed) {
         final LatLng startPosition = marker.getPosition();
@@ -492,7 +531,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
                 // Repeat till progress is complete.
                 if (t < 1) {
-                    // Repeat again 16ms later.
+                    // Post again 16ms later.
                     handler.postDelayed(this, 16);
                 }
             }
