@@ -550,8 +550,13 @@ public class ZombieMapActivity extends AppCompatActivity implements
                 .setPositiveButton("Start Again", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        // reset everything
+                       
                         activated = false;
+                        cmeter.setBase(SystemClock.elapsedRealtime());
+                        cmeter.stop();
+                        for (int i = 0;i<allMarkers.size();i++){
+                                allMarkers.get(i).remove();
+                        }
                     }
                 })
                 .setCancelable(false)
