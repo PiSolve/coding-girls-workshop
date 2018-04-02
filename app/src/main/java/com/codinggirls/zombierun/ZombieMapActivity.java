@@ -17,7 +17,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -66,7 +68,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     Location lastuserlocation;
     boolean firstZoom = false;
     boolean activated = false;
-    boolean firstRun= true;
+    boolean firstRun = true;
     boolean caught = false;
     Chronometer cmeter;
     Button activate;
@@ -80,6 +82,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
         intent.putExtra(PLAYER_NAME, name);
         context.startActivity(intent);
     }
+
     //The primary method of the activity, automatically called by Android. We override it in order to get it to do what we want.
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -92,6 +95,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
         activate.setText("Start!");
         checkLocationPermission();
         mCountDownText = findViewById(R.id.start_timer);
+        mCountDownText.setVisibility(View.GONE);
         allMarkers = new ArrayList<Marker>();
         mCountDownText.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -103,8 +107,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
         activate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                activated= true;
+                activated = true;
 
             }
         });
@@ -165,6 +168,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
     public void onConnectionSuspended(int i) {
 
     }
+
     //In theory, this method is called every time the User's location changes. In practice, it is called every few seconds automatically
     @Override
     public void onLocationChanged(Location location) {
@@ -183,39 +187,37 @@ public class ZombieMapActivity extends AppCompatActivity implements
             firstZoom = true;
         }
         //If the user has pressed the start button, and we have zombie markers present, we begin the game
-        if(activated ==true&& allMarkers.size() !=0) {
+        if (activated == true && allMarkers.size() != 0) {
 
 
             // Follow player once first, in order to update lastuserlocation and avoid a null error
-            if(firstRun==true){
+            if (firstRun == true) {
                 for (int i = 0; i < allMarkers.size(); i++) {
 
                     followPlayer(loc, allMarkers.get(i), 3000);
                     lastuserlocation = mLastLocation;
-                    firstRun=false;
+                    firstRun = false;
                 }
-            }else{
+            } else {
                 //if user hasnt moved , then we catch, else we follow
-                boolean close = checkifclose(mLastLocation,lastuserlocation);
-                if (close==true && caught==false) {
+                boolean close = checkifclose(mLastLocation, lastuserlocation);
+                if (close == true && caught == false) {
                     for (int i = 0; i < allMarkers.size(); i++) {
                         catchPlayer(loc, allMarkers.get(i), 3000);
-                        Toast.makeText(getApplicationContext(), "Caught!", Toast.LENGTH_LONG).show();
+//                        Toast.makeText(getApplicationContext(), "Caught!", Toast.LENGTH_LONG).show();
+                        showCaughtDialog();
                     }
                 }
-                if (close!=true && caught ==false){
+                if (close != true && caught == false) {
                     for (int i = 0; i < allMarkers.size(); i++) {
 
-                        followPlayer(loc,allMarkers.get(i),3000);
-                        lastuserlocation= mLastLocation;
+                        followPlayer(loc, allMarkers.get(i), 3000);
+                        lastuserlocation = mLastLocation;
 
 
                     }
                 }
             }
-
-
-
 
 
         }
@@ -287,11 +289,13 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
 
     }
+
     //spwns a zombie Marker on map
     public void spawnzombie(LatLng zombielatlng) {
         drawZombieMarker(zombielatlng, zombieID);
         zombieID += 1;
     }
+
     // A fallback check in case we do not have GoogleAPI for any reason (i.e. no internet)
     public boolean isGooglePlayServicesAvailable(Activity activity) {
         GoogleApiAvailability api = GoogleApiAvailability.getInstance();
@@ -402,6 +406,7 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
 
     }
+
     //called when you minimize app
     @Override
     public void onPause() {
@@ -480,31 +485,32 @@ public class ZombieMapActivity extends AppCompatActivity implements
 
         animateMarkerToGB(zombiemarker, userloc, interpolator, speed);
         cmeter.stop();
-        mScore=fetchclock();
-      ; caught=true;
+        mScore = fetchclock();
+        ;
+        caught = true;
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                shareScore();
-                finish();
+                
             }
         }, 3000);
 
 
     }
+
     //method to measure up two locations to check if we are close enough
-    private boolean checkifclose(Location userloc, Location zombieloc){
-       float distance = userloc.distanceTo(zombieloc);
+    private boolean checkifclose(Location userloc, Location zombieloc) {
+        float distance = userloc.distanceTo(zombieloc);
 
-       if (distance< 5){
-           return true;
+        if (distance < 5) {
+            return true;
 
-       }else{
-           return false;
-       }
+        } else {
+            return false;
+        }
     }
 
-    
+
     // animate  marker based  on any interpolator , (Linear , LinearFixed, or spherical)
     //An interpolator is simply a class used to animate something.
     private void animateMarkerToGB(final Marker marker, final LatLng finalPosition,
@@ -536,6 +542,31 @@ public class ZombieMapActivity extends AppCompatActivity implements
                 }
             }
         });
+    }
+
+    private void showCaughtDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Caught!!")
+                .setPositiveButton("Start Again", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // reset everything
+                        activated = false;
+                    }
+                })
+                .setCancelable(false)
+                .setNeutralButton("Share Score", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        shareScore();
+                    }
+                })
+                .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                }).create().show();
     }
 }
 
